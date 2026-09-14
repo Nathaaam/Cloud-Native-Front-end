@@ -129,14 +129,14 @@ export async function crearInversion(data: any) {
 
 export async function obtenerMisInversiones(usuarioId: number) {
   const response = await fetch(
-    `${API_URL}/inversiones/mi-portafolio?usuarioId=${usuarioId}`,
+    `${API_URL}/inversiones/mis-inversiones?usuarioId=${usuarioId}`,
     {
       headers: getAuthHeaders(),
     }
   );
 
   if (!response.ok) {
-    throw new Error("Error obteniendo portafolio");
+    throw new Error("Error obteniendo inversiones");
   }
 
   return await response.json();

@@ -35,8 +35,23 @@ function Fondos({ irAInvertir }: any) {
 
   if (cargando) return <main className="fondos-page"><h1>Cargando...</h1></main>;
 
-  const totalInvertido = inversiones.reduce((sum, inv) => sum + inv.montoInvertido, 0);
-  const rentabilidadTotal = rendimiento?.rentabilidadTotal || 0;
+  const totalInvertido = inversiones.reduce(
+    (sum, inv) => sum + inv.montoInvertido,
+    0
+  );
+
+  const rentabilidadTotal =
+    Array.isArray(rendimiento) && rendimiento.length > 0
+      ? (rendimiento.reduce(
+          (sum, inv) => sum + Number(inv.rendimientoAbsoluto || 0),
+          0
+        ) /
+          rendimiento.reduce(
+            (sum, inv) => sum + Number(inv.montoInvertido || 0),
+            0
+          )) *
+        100
+      : 0;
 
   return (
     <main className="fondos-page">
@@ -61,7 +76,8 @@ function Fondos({ irAInvertir }: any) {
         <div className="summary-card">
           <span>Rentabilidad</span>
           <strong className={rentabilidadTotal >= 0 ? "positive" : "negative"}>
-            {rentabilidadTotal >= 0 ? "+" : ""}{rentabilidadTotal.toFixed(2)}%
+            {rentabilidadTotal >= 0 ? "+" : ""}
+            {rentabilidadTotal.toFixed(2)}%
           </strong>
         </div>
 

@@ -24,6 +24,9 @@ function Dashboard() {
         obtenerRendimiento(usuario.id),
       ]);
 
+      console.log("INVERSIONES:", dataInversiones);
+      console.log("RENDIMIENTO:", dataRendimiento);
+
       setInversiones(dataInversiones);
       setRendimiento(dataRendimiento);
     } catch (err: any) {
@@ -35,8 +38,23 @@ function Dashboard() {
 
   if (cargando) return <main className="dashboard-page"><h1>Cargando...</h1></main>;
 
-  const totalInvertido = inversiones.reduce((sum, inv) => sum + inv.montoInvertido, 0);
-  const rentabilidadTotal = rendimiento?.rentabilidadTotal || 0;
+  const totalInvertido = inversiones.reduce(
+    (sum, inv) => sum + Number(inv.montoInvertido || 0),
+    0
+  );
+
+  const rentabilidadTotal =
+    Array.isArray(rendimiento) && rendimiento.length > 0
+      ? (rendimiento.reduce(
+          (sum, inv) => sum + Number(inv.rendimientoAbsoluto || 0),
+          0
+        ) /
+          rendimiento.reduce(
+            (sum, inv) => sum + Number(inv.montoInvertido || 0),
+            0
+          )) *
+        100
+      : 0;
 
   return (
     <main className="dashboard-page">
