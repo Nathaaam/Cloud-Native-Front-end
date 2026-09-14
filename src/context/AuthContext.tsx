@@ -88,7 +88,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Error en registro");
+        // Extraer el mensaje específico del error (si contiene "errores", usar el primero)
+        let mensaje = error.message || "Error en registro";
+        if (error.errores && typeof error.errores === 'object') {
+          const primerError = Object.values(error.errores)[0];
+          if (primerError) {
+            mensaje = String(primerError);
+          }
+        }
+        throw new Error(mensaje);
       }
 
       const data = await response.json();

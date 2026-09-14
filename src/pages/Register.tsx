@@ -23,8 +23,10 @@ function Register({ volver }: any) {
       return;
     }
 
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+    // Validar requisitos de contraseña: 8+ chars, 1 mayúscula, 1 número, 1 símbolo
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])(.{8,})$/;
+    if (!passwordRegex.test(password)) {
+      setError("La contraseña debe tener: 8+ caracteres, 1 mayúscula, 1 número y 1 símbolo especial (!@#$%^&*)");
       return;
     }
 
