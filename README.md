@@ -1,32 +1,55 @@
-# React + TypeScript + Vite
+# Cloud-Native Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend application built with React + TypeScript + Vite for the Cloud-Native Banking application.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React with TypeScript for type safety
+- Vite for fast development and optimized builds
+- AWS integration support
+- Authentication context management
+- Multi-page application with Dashboard, Investments, and Admin sections
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
 
-## Expanding the Oxlint configuration
+### Installation
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Development Server
+
+```bash
+npm run dev
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+### Preview
+
+```bash
+npm run preview
+```
+
+## Project Structure
+
+- `src/pages/` - Page components (Dashboard, Fondos, Admin, etc.)
+- `src/services/` - API and storage services
+- `src/context/` - React context for authentication
+- `src/assets/` - Static assets
+
+## Technologies
+
+- React + TypeScript
+- Vite
+- AWS Amplify
+- CSS Modules
