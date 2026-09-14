@@ -1,0 +1,59 @@
+.dashboard-page {
+  padding: 40px;
+}
+
+
+.subtitle {
+  color: #777;
+}
+
+
+.dashboard-cards {
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 25px;
+
+  margin-top: 30px;
+
+}
+
+
+.dashboard-card {
+
+  background: white;
+
+  border: 1px solid #ddd;
+
+  border-radius: 16px;
+
+  padding: 25px;
+
+}
+
+
+.dashboard-card span {
+
+  color: #777;
+
+}
+
+
+.dashboard-card strong {
+
+  display:block;
+
+  font-size:28px;
+
+  margin:15px 0;
+
+}
+
+
+.positive {
+
+  color: green;
+
+}
