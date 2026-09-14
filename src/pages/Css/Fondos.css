@@ -1,7 +1,6 @@
 .fondos-page {
-  padding: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 35px;
+  width: 100%;
 }
 
 .fondos-header {
@@ -65,8 +64,8 @@
 
 .fondos-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(250px, 1fr));
+  gap: 25px;
 }
 
 .fondo-card {

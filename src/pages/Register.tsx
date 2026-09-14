@@ -1,168 +1,110 @@
 import { useState } from "react";
-import { guardarUsuario } from "../services/storageService";
-import "./Login.css";
-
+import { useAuth } from "../context/AuthContext";
+import "./Css/Register.css";
 
 function Register({ volver }: any) {
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const { registrar } = useAuth();
 
-
-  const [nombre,setNombre] = useState("");
-
-  const [apellido,setApellido] = useState("");
-
-  const [correo,setCorreo] = useState("");
-
-  const [password,setPassword] = useState("");
-
-
-
-  function registrar(){
-
-
-    if(
-      !nombre ||
-      !apellido ||
-      !correo ||
-      !password
-    ){
-
-      alert("Completa todos los campos");
-
+  async function crearCuenta() {
+    if (!nombre || !apellido || !correo || !password) {
+      setError("Completa todos los campos");
       return;
-
     }
 
+    if (password !== passwordConfirm) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
 
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
 
-    const usuario = {
+    setCargando(true);
+    setError("");
 
-      nombre,
-
-      apellido,
-
-      correo,
-
-      password
-
-    };
-
-
-
-    guardarUsuario(usuario);
-
-
-
-    alert("Usuario creado correctamente");
-
-
-
-    volver();
-
-
+    try {
+      await registrar({ 
+        nombre, 
+        apellido, 
+        correo, 
+        password,
+        passwordConfirm,
+        rol: "CLIENTE" 
+      });
+      alert("Cuenta creada correctamente");
+      volver();
+    } catch (err: any) {
+      setError(err.message || "Error en registro");
+    } finally {
+      setCargando(false);
+    }
   }
 
-
-
   return (
-
     <main className="auth-page">
-
-
       <div className="auth-card">
+        <h1>Banco Cloud</h1>
+        <h2>Crear cuenta</h2>
 
-
-        <h1>
-          Banco Cloud
-        </h1>
-
-
-        <h2>
-          Crear cuenta
-        </h2>
-
-
+        {error && <div style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
 
         <input
-
           placeholder="Nombre"
-
           value={nombre}
-
-          onChange={(e)=>setNombre(e.target.value)}
-
+          onChange={(e) => setNombre(e.target.value)}
+          disabled={cargando}
         />
 
-
-
         <input
-
           placeholder="Apellido"
-
           value={apellido}
-
-          onChange={(e)=>setApellido(e.target.value)}
-
+          onChange={(e) => setApellido(e.target.value)}
+          disabled={cargando}
         />
 
-
-
         <input
-
+          type="email"
           placeholder="Correo"
-
           value={correo}
-
-          onChange={(e)=>setCorreo(e.target.value)}
-
+          onChange={(e) => setCorreo(e.target.value)}
+          disabled={cargando}
         />
-
-
 
         <input
-
           type="password"
-
           placeholder="Contraseña"
-
           value={password}
-
-          onChange={(e)=>setPassword(e.target.value)}
-
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={cargando}
         />
 
+        <input
+          type="password"
+          placeholder="Confirmar contraseña"
+          value={passwordConfirm}
+          onChange={(e) => setPasswordConfirm(e.target.value)}
+          disabled={cargando}
+        />
 
-
-        <button onClick={registrar}>
-
-          Registrarse
-
+        <button onClick={crearCuenta} disabled={cargando}>
+          {cargando ? "Registrando..." : "Crear cuenta"}
         </button>
 
-
-
-        <button
-
-          className="register-button"
-
-          onClick={volver}
-
-        >
-
-          Volver al login
-
+        <button className="register-button" onClick={volver} disabled={cargando}>
+          Volver
         </button>
-
-
-
       </div>
-
-
     </main>
-
   );
-
 }
-
-
 
 export default Register;
