@@ -1,0 +1,99 @@
+.investment-page {
+  padding: 8px 4px 40px;
+  max-width: 640px;
+}
+
+.investment-page h1 {
+  color: var(--text-0);
+  font-size: 28px;
+}
+
+.investment-page > p {
+  color: var(--text-2);
+  margin-top: 8px;
+}
+
+.investment-form {
+  margin-top: 30px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.6);
+}
+
+.investment-form label {
+  display: block;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--text-1);
+  font-size: 13.5px;
+}
+
+.investment-form select,
+.investment-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-0);
+  font-size: 14.5px;
+  outline: none;
+}
+
+.input-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.investment-form select:focus,
+.investment-form input:focus {
+  border-color: var(--accent);
+}
+
+.investment-form select option {
+  background: #26262e;
+  color: var(--text-0);
+}
+
+.summary {
+  margin-top: 25px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  color: var(--text-1);
+}
+
+.summary h3 {
+  color: var(--text-0);
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.summary p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.investment-form button {
+  margin-top: 25px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.investment-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

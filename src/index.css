@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-0: #0c0c0f;
+  --bg-1: #131317;
+  --bg-2: #1c1c22;
+  --panel: linear-gradient(150deg, rgba(30, 30, 36, 0.9) 0%, rgba(13, 13, 16, 0.9) 100%);
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --text-0: #f4f4f6;
+  --text-1: #b9b9c2;
+  --text-2: #83838f;
+  --accent: #ff4f9a;
+  --accent-2: #5ee6c4;
+  --accent-3: #ff8a3d;
+  --positive: #3ddc84;
+  --negative: #ff6b6b;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  min-height: 100vh;
+  font-family: 'Quicksand', sans-serif;
+  background: var(--bg-0);
+  background: linear-gradient(150deg, #0c0c0f 0%, #14141a 45%, #0d0d10 100%);
+  color: var(--text-0);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 700;
+  margin: 0;
+}
+
+button {
+  font-family: 'Quicksand', sans-serif;
+}
+
+input, select, textarea {
+  font-family: 'Quicksand', sans-serif;
+}
+
+/* Scrollbars matching reference design */
+*::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #3c3c45;
+  border-radius: 20px;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background: transparent;
+}
