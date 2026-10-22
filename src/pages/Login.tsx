@@ -2,16 +2,28 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import "./Css/Login.css";
 
-function Login({ onLogin, irRegistro, irAccesoAdmin }: any) {
-  const [correo, setCorreo] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [cargando, setCargando] = useState(false);
+function Login({
+  onLogin,
+  irRegistro,
+  irAccesoAdmin,
+}: any) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] =
+    useState("");
+
+  const [cargando, setCargando] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
   const { login } = useAuth();
 
   async function entrar() {
-    if (!correo || !password) {
-      setError("Ingresa correo y contraseña");
+    if (!email.trim() || !password) {
+      setError(
+        "Ingresa tu correo y contraseña."
+      );
       return;
     }
 
@@ -19,11 +31,20 @@ function Login({ onLogin, irRegistro, irAccesoAdmin }: any) {
     setError("");
 
     try {
-      await login(correo, password);
-      onLogin();
+      await login(
+        email.trim(),
+        password
+      );
+
+      onLogin?.();
     } catch (err: any) {
-      setError(err.message || "Error en la autenticación");
-    } finally {
+      console.error(err);
+
+      setError(
+        err.message ||
+          "Correo o contraseña incorrectos."
+      );
+
       setCargando(false);
     }
   }
@@ -32,15 +53,27 @@ function Login({ onLogin, irRegistro, irAccesoAdmin }: any) {
     <main className="auth-page">
       <div className="auth-card">
         <h1>Banco Cloud</h1>
+
         <h2>Iniciar sesión</h2>
 
-        {error && <div style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
+        {error && (
+          <div
+            style={{
+              color: "red",
+              marginBottom: "10px",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <input
           type="email"
-          placeholder="Correo"
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
           disabled={cargando}
         />
 
@@ -48,25 +81,47 @@ function Login({ onLogin, irRegistro, irAccesoAdmin }: any) {
           type="password"
           placeholder="Contraseña"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
           disabled={cargando}
         />
 
-        <button onClick={entrar} disabled={cargando}>
-          {cargando ? "Ingresando..." : "Ingresar"}
+        <button
+          onClick={entrar}
+          disabled={cargando}
+        >
+          {cargando
+            ? "Ingresando..."
+            : "Ingresar"}
         </button>
 
-        <p style={{ textAlign: "center", marginTop: "15px", fontSize: "14px" }}>
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "15px",
+            fontSize: "14px",
+          }}
+        >
           ¿No tienes cuenta?{" "}
           <span
             onClick={irRegistro}
-            style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
+            style={{
+              cursor: "pointer",
+              color: "blue",
+              textDecoration: "underline",
+            }}
           >
             Regístrate aquí
           </span>
         </p>
 
-        <button type="button" className="admin-access-link" onClick={irAccesoAdmin}>
+        <button
+          type="button"
+          className="admin-access-link"
+          onClick={irAccesoAdmin}
+          disabled={cargando}
+        >
           🛡️ Acceso administrativo
         </button>
       </div>

@@ -1,0 +1,50 @@
+# Git files
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+README*
+CONTRIBUTING*
+
+# Dependencies cache
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Build artifacts
+dist/
+dist-ssr/
+build/
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+
+# Development
+src/**/*.local.ts
+src/**/*.local.tsx

@@ -2,16 +2,26 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import "./Css/Login.css";
 
-function AdminLogin({ volver, onAdminLoginSuccess }: any) {
-  const [correo, setCorreo] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const { login, logout } = useAuth();
+function AdminLogin({ volver }: any) {
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [cargando, setCargando] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const { login } = useAuth();
 
   async function entrar() {
-    if (!correo || !password) {
-      setError("Ingresa correo y contraseña");
+    if (!email.trim() || !password) {
+      setError(
+        "Ingresa tu correo y contraseña."
+      );
       return;
     }
 
@@ -19,23 +29,18 @@ function AdminLogin({ volver, onAdminLoginSuccess }: any) {
     setError("");
 
     try {
-      await login(correo, password);
-
-      // login() ya guardó el usuario en localStorage de forma síncrona;
-      // lo leemos de ahí para verificar el rol antes de dejar pasar.
-      const guardado = JSON.parse(localStorage.getItem("usuario") || "{}");
-
-      if (!guardado.rol || !guardado.rol.includes("ADMIN")) {
-        logout();
-        setError("Esta cuenta no tiene permisos de administrador.");
-        return;
-      }
-
-      // Es admin: avisamos al padre para que aterrice directo en el panel admin.
-      onAdminLoginSuccess?.();
+      await login(
+        email.trim(),
+        password
+      );
     } catch (err: any) {
-      setError(err.message || "Error en la autenticación");
-    } finally {
+      console.error(err);
+
+      setError(
+        err.message ||
+          "No se pudo iniciar sesión."
+      );
+
       setCargando(false);
     }
   }
@@ -43,17 +48,32 @@ function AdminLogin({ volver, onAdminLoginSuccess }: any) {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <span className="admin-badge">🛡️ Acceso restringido</span>
+        <span className="admin-badge">
+          🛡️ Acceso restringido
+        </span>
+
         <h1>Banco Cloud</h1>
+
         <h2>Panel administrativo</h2>
 
-        {error && <div style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
+        {error && (
+          <div
+            style={{
+              color: "red",
+              marginBottom: "10px",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <input
           type="email"
-          placeholder="Correo administrativo"
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
           disabled={cargando}
         />
 
@@ -61,18 +81,35 @@ function AdminLogin({ volver, onAdminLoginSuccess }: any) {
           type="password"
           placeholder="Contraseña"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
           disabled={cargando}
         />
 
-        <button onClick={entrar} disabled={cargando}>
-          {cargando ? "Verificando..." : "Ingresar como administrador"}
+        <button
+          onClick={entrar}
+          disabled={cargando}
+        >
+          {cargando
+            ? "Ingresando..."
+            : "Ingresar como administrador"}
         </button>
 
-        <p style={{ textAlign: "center", marginTop: "15px", fontSize: "14px" }}>
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: "15px",
+            fontSize: "14px",
+          }}
+        >
           <span
             onClick={volver}
-            style={{ cursor: "pointer", color: "var(--accent-2)", textDecoration: "underline" }}
+            style={{
+              cursor: "pointer",
+              color: "var(--accent-2)",
+              textDecoration: "underline",
+            }}
           >
             ← Volver al acceso de clientes
           </span>

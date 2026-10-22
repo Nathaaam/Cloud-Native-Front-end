@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
-import { obtenerMisInversiones, obtenerRendimiento } from "../services/apiService";
+import {
+  obtenerMisInversiones,
+  obtenerRendimiento,
+} from "../services/apiService";
 import { useAuth } from "../context/AuthContext";
 import "./Css/Fondos.css";
 
 function Fondos({ irAInvertir }: any) {
-  const { usuario } = useAuth();
+  const { usuario, token } = useAuth();
+
   const [inversiones, setInversiones] = useState<any[]>([]);
   const [rendimiento, setRendimiento] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -12,45 +16,88 @@ function Fondos({ irAInvertir }: any) {
 
   useEffect(() => {
     cargarDatos();
-  }, [usuario]);
+  }, [usuario, token]);
 
   async function cargarDatos() {
-    if (!usuario?.id) return;
+    if (!usuario?.id || !token) {
+      setCargando(false);
+      return;
+    }
 
     try {
       setCargando(true);
-      const [dataInversiones, dataRendimiento] = await Promise.all([
-        obtenerMisInversiones(usuario.id),
-        obtenerRendimiento(usuario.id),
-      ]);
+      setError("");
 
-      setInversiones(dataInversiones);
-      setRendimiento(dataRendimiento);
+      const [dataInversiones, dataRendimiento] =
+        await Promise.all([
+          obtenerMisInversiones(usuario.id, token),
+          obtenerRendimiento(usuario.id, token),
+        ]);
+
+      setInversiones(
+        Array.isArray(dataInversiones)
+          ? dataInversiones
+          : []
+      );
+
+      setRendimiento(
+        Array.isArray(dataRendimiento)
+          ? dataRendimiento
+          : []
+      );
     } catch (err: any) {
-      setError(err.message);
+      setError(
+        err.message || "Error cargando tus inversiones"
+      );
     } finally {
       setCargando(false);
     }
   }
 
-  if (cargando) return <main className="fondos-page"><h1>Cargando...</h1></main>;
+  if (cargando) {
+    return (
+      <main className="fondos-page">
+        <h1>Cargando...</h1>
+      </main>
+    );
+  }
 
   const totalInvertido = inversiones.reduce(
-    (sum, inv) => sum + inv.montoInvertido,
+    (sum, inv) =>
+      sum + Number(inv.montoInvertido || 0),
     0
   );
 
   const rentabilidadTotal =
-    Array.isArray(rendimiento) && rendimiento.length > 0
-      ? (rendimiento.reduce(
-          (sum, inv) => sum + Number(inv.rendimientoAbsoluto || 0),
-          0
-        ) /
-          rendimiento.reduce(
-            (sum, inv) => sum + Number(inv.montoInvertido || 0),
-            0
-          )) *
-        100
+    Array.isArray(rendimiento) &&
+    rendimiento.length > 0
+      ? (() => {
+          const totalRendimiento =
+            rendimiento.reduce(
+              (sum, inv) =>
+                sum +
+                Number(
+                  inv.rendimientoAbsoluto || 0
+                ),
+              0
+            );
+
+          const totalMonto =
+            rendimiento.reduce(
+              (sum, inv) =>
+                sum +
+                Number(
+                  inv.montoInvertido || 0
+                ),
+              0
+            );
+
+          return totalMonto > 0
+            ? (totalRendimiento /
+                totalMonto) *
+                100
+            : 0;
+        })()
       : 0;
 
   return (
@@ -58,24 +105,49 @@ function Fondos({ irAInvertir }: any) {
       <div className="fondos-header">
         <div>
           <h1>Mi Portafolio</h1>
-          <p>Administra y revisa tus inversiones</p>
+          <p>
+            Administra y revisa tus inversiones
+          </p>
         </div>
-        <button className="btn-primary" onClick={irAInvertir}>
+
+        <button
+          className="btn-primary"
+          onClick={irAInvertir}
+        >
           + Nueva inversión
         </button>
       </div>
 
-      {error && <div style={{ color: "red", padding: "10px" }}>{error}</div>}
+      {error && (
+        <div
+          style={{
+            color: "red",
+            padding: "10px",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       <section className="fondos-summary">
         <div className="summary-card">
           <span>Total invertido</span>
-          <strong>${totalInvertido.toLocaleString()}</strong>
+
+          <strong>
+            ${totalInvertido.toLocaleString()}
+          </strong>
         </div>
 
         <div className="summary-card">
           <span>Rentabilidad</span>
-          <strong className={rentabilidadTotal >= 0 ? "positive" : "negative"}>
+
+          <strong
+            className={
+              rentabilidadTotal >= 0
+                ? "positive"
+                : "negative"
+            }
+          >
             {rentabilidadTotal >= 0 ? "+" : ""}
             {rentabilidadTotal.toFixed(2)}%
           </strong>
@@ -83,7 +155,10 @@ function Fondos({ irAInvertir }: any) {
 
         <div className="summary-card">
           <span>Inversiones activas</span>
-          <strong>{inversiones.length}</strong>
+
+          <strong>
+            {inversiones.length}
+          </strong>
         </div>
       </section>
 
@@ -91,38 +166,86 @@ function Fondos({ irAInvertir }: any) {
         <h2>Mis inversiones</h2>
 
         {inversiones.length === 0 ? (
-          <p style={{ textAlign: "center", padding: "20px", color: "#666" }}>
-            No tienes inversiones aún. ¡Crea una nueva inversión!
+          <p
+            style={{
+              textAlign: "center",
+              padding: "20px",
+              color: "#666",
+            }}
+          >
+            No tienes inversiones aún. ¡Crea una
+            nueva inversión!
           </p>
         ) : (
           <div className="fondos-grid">
-            {inversiones.map((inv) => (
-              <article className="fondo-card" key={inv.id}>
-                <div className="fondo-top">
-                  <div className="fondo-icon">📈</div>
-                  <span className="fondo-risk">{inv.estado}</span>
-                </div>
+            {inversiones.map((inv) => {
+              const datosRendimiento =
+                Array.isArray(rendimiento)
+                  ? rendimiento.find(
+                      (r) =>
+                        r.inversionId ===
+                        inv.id
+                    )
+                  : null;
 
-                <h3>Fondo #{inv.fondoId}</h3>
+              return (
+                <article
+                  className="fondo-card"
+                  key={inv.id}
+                >
+                  <div className="fondo-top">
+                    <div className="fondo-icon">
+                      📈
+                    </div>
 
-                <div className="fondo-info">
-                  <div>
-                    <span>Monto invertido</span>
-                    <strong>${inv.montoInvertido.toLocaleString()}</strong>
+                    <span className="fondo-risk">
+                      {inv.estado}
+                    </span>
                   </div>
 
-                  <div>
-                    <span>Cuotas</span>
-                    <strong>{inv.cuotas}</strong>
-                  </div>
+                  <h3>
+                    {datosRendimiento?.nombreFondo ||
+                      `Fondo #${inv.fondoId}`}
+                  </h3>
 
-                  <div>
-                    <span>Valor cuota compra</span>
-                    <strong>${inv.valorCuotaCompra.toFixed(2)}</strong>
+                  <div className="fondo-info">
+                    <div>
+                      <span>
+                        Monto invertido
+                      </span>
+
+                      <strong>
+                        $
+                        {Number(
+                          inv.montoInvertido || 0
+                        ).toLocaleString()}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Cuotas</span>
+
+                      <strong>
+                        {inv.cuotas}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Valor cuota compra
+                      </span>
+
+                      <strong>
+                        $
+                        {Number(
+                          inv.valorCuotaCompra || 0
+                        ).toFixed(2)}
+                      </strong>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

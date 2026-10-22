@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import Dashboard from "./pages/Dashboard";
 import Fondos from "./pages/Fondos";
 import NuevaInversion from "./pages/NuevaInversion";
@@ -6,19 +7,26 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminLogin from "./pages/AdminLogin";
 import Admin from "./pages/Admin";
+
+import CognitoProvider from "./auth/CognitoProvider";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+
 import "./App.css";
 
 function AppContent() {
   const { usuario, logout, esAdmin } = useAuth();
+
   const [registro, setRegistro] = useState(false);
   const [accesoAdmin, setAccesoAdmin] = useState(false);
   const [pagina, setPagina] = useState("dashboard");
 
-  // Pantallas de Login / Registro / Acceso administrativo
   if (!usuario) {
     if (registro) {
-      return <Register volver={() => setRegistro(false)} />;
+      return (
+        <Register
+          volver={() => setRegistro(false)}
+        />
+      );
     }
 
     if (accesoAdmin) {
@@ -39,7 +47,6 @@ function AppContent() {
     );
   }
 
-  // Aplicación Banco Cloud
   return (
     <div className="app">
       <aside className="sidebar">
@@ -89,7 +96,10 @@ function AppContent() {
             <strong>
               {usuario?.nombre} {usuario?.apellido}
             </strong>
-            <span>{esAdmin() ? "Administrador" : "Cliente"}</span>
+
+            <span>
+              {esAdmin() ? "Administrador" : "Cliente"}
+            </span>
           </div>
         </div>
       </aside>
@@ -100,6 +110,7 @@ function AppContent() {
 
           <div>
             Hola {usuario?.nombre} 👋
+
             <button
               onClick={() => {
                 logout();
@@ -115,7 +126,9 @@ function AppContent() {
         {pagina === "dashboard" && <Dashboard />}
 
         {pagina === "fondos" && (
-          <Fondos irAInvertir={() => setPagina("invertir")} />
+          <Fondos
+            irAInvertir={() => setPagina("invertir")}
+          />
         )}
 
         {pagina === "invertir" && <NuevaInversion />}
@@ -128,9 +141,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <CognitoProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </CognitoProvider>
   );
 }
 

@@ -1,5 +1,18 @@
-import { createContext, useState, useContext, useEffect } from "react";
-import * as apiService from "../services/apiService";
+import {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+} from "react";
+
+import {
+  signIn,
+  signUp,
+  confirmSignUp,
+  signOut,
+  getCurrentUser,
+  fetchAuthSession,
+} from "aws-amplify/auth";
 
 interface User {
   id?: number;
@@ -8,156 +21,377 @@ interface User {
   correo?: string;
   email?: string;
   rol?: string;
-  password?: string;
 }
 
 interface AuthContextType {
   usuario: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  registrar: (userData: any) => Promise<void>;
+
+  login: (
+    email: string,
+    password: string
+  ) => Promise<void>;
+
+  registrar: (userData: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
+
+  confirmarRegistro: (
+    email: string,
+    codigo: string,
+    nombre: string,
+    apellido: string,
+    password: string
+  ) => Promise<void>;
+
+  logout: () => Promise<void>;
+
   esAdmin: () => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<
+  AuthContextType | undefined
+>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [usuario, setUsuario] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8090/api/v1";
 
-  // Cargar sesión al iniciar
-  useEffect(() => {
-    const tokenGuardado = localStorage.getItem("authToken");
-    const usuarioGuardado = localStorage.getItem("usuario");
-    if (tokenGuardado && usuarioGuardado) {
-      setToken(tokenGuardado);
-      try {
-        setUsuario(JSON.parse(usuarioGuardado));
-      } catch (e) {
-        console.error("Error parsing usuario", e);
-      }
-    }
-  }, []);
+export function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [usuario, setUsuario] =
+    useState<User | null>(null);
 
-  const login = async (email: string, password: string) => {
-    try {
-      const data = await apiService.login(email, password);
+  const [token, setToken] =
+    useState<string | null>(null);
 
-      const nuevoToken = data.token || data.jwtToken;
-      const usuarioId = data.id || data.usuarioId;
+  async function obtenerAccessToken() {
+    const session =
+      await fetchAuthSession();
 
-      // Guardar token
-      setToken(nuevoToken);
-      localStorage.setItem("authToken", nuevoToken);
+    return (
+      session.tokens?.accessToken?.toString() ||
+      null
+    );
+  }
 
-      // El login del BFF no devuelve nombre/apellido (solo usuarioId, email, rol, token),
-      // así que pedimos el perfil completo a usuarios-service para tener los datos reales.
-      let perfil: any = {};
-      try {
-        perfil = await apiService.obtenerUsuario(usuarioId);
-      } catch (e) {
-        console.warn("No se pudo obtener el perfil completo del usuario:", e);
-      }
-
-      // Guardar datos del usuario
-      const usuarioData: User = {
-        id: usuarioId,
-        nombre: perfil.nombre || data.nombre || "Usuario",
-        apellido: perfil.apellido || data.apellido || "",
-        correo: email,
-        email: email,
-        rol: perfil.rol || data.rol || data.role || "CLIENTE",
-      };
-
-      setUsuario(usuarioData);
-      localStorage.setItem("usuario", JSON.stringify(usuarioData));
-    } catch (error: any) {
-      console.error("Error en login:", error);
-      throw new Error(error.message || "Error en la autenticación");
-    }
-  };
-
-  const registrar = async (userData: any) => {
+  async function cargarPerfil(
+    accessToken: string
+  ) {
     try {
       const response = await fetch(
-        "http://localhost:8090/api/v1/auth/registro",
+        `${API_URL}/usuarios/me`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nombre: userData.nombre,
-            apellido: userData.apellido,
-            email: userData.correo,
-            password: userData.password,
-            passwordConfirm: userData.passwordConfirm || userData.password,
-            rol: userData.rol || "CLIENTE",
-          }),
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${accessToken}`,
+          },
         }
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        // Extraer el mensaje específico del error (si contiene "errores", usar el primero)
-        let mensaje = error.message || "Error en registro";
-        if (error.errores && typeof error.errores === 'object') {
-          const primerError = Object.values(error.errores)[0];
-          if (primerError) {
-            mensaje = String(primerError);
-          }
-        }
-        throw new Error(mensaje);
+        setUsuario(null);
+        setToken(null);
+        return false;
       }
 
-      const data = await response.json();
-      
-      // Guardar token del login automático
-      const nuevoToken = data.token || data.jwtToken;
-      setToken(nuevoToken);
-      localStorage.setItem("authToken", nuevoToken);
+      const data =
+        await response.json();
 
-      // Guardar datos del usuario
-      const usuarioData: User = {
-        id: data.id || data.usuarioId,
-        nombre: userData.nombre,
-        apellido: userData.apellido,
-        correo: userData.correo,
-        email: userData.correo,
-        rol: data.rol || userData.rol || "CLIENTE",
-      };
-      
-      setUsuario(usuarioData);
-      localStorage.setItem("usuario", JSON.stringify(usuarioData));
-    } catch (error: any) {
-      console.error("Error en registro:", error);
-      throw new Error(error.message || "Error en el registro");
+      setUsuario({
+        id: data.id,
+        nombre:
+          data.nombre || "Usuario",
+        apellido:
+          data.apellido || "",
+        correo: data.email,
+        email: data.email,
+        rol:
+          data.rol || "CLIENTE",
+      });
+
+      setToken(accessToken);
+
+      return true;
+
+    } catch (error) {
+      console.error(
+        "Error obteniendo perfil:",
+        error
+      );
+
+      setUsuario(null);
+      setToken(null);
+
+      return false;
     }
-  };
+  }
 
-  const logout = () => {
-    setUsuario(null);
-    setToken(null);
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("usuario");
-  };
+  async function registrarEnBancoCloud(
+    accessToken: string,
+    nombre: string,
+    apellido: string,
+    email: string
+  ) {
+    const response = await fetch(
+      `${API_URL}/usuarios/registro`,
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          nombre,
+          apellido,
+          email,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData =
+        await response
+          .json()
+          .catch(() => null);
+
+      throw new Error(
+        errorData?.message ||
+          "No se pudo registrar el usuario en BancoCloud"
+      );
+    }
+
+    return await response.json();
+  }
+
+  async function login(
+    email: string,
+    password: string
+  ) {
+    const result = await signIn({
+      username: email,
+      password,
+    });
+
+    if (!result.isSignedIn) {
+      throw new Error(
+        "La autenticación requiere un paso adicional."
+      );
+    }
+
+    const accessToken =
+      await obtenerAccessToken();
+
+    if (!accessToken) {
+      await signOut();
+
+      throw new Error(
+        "Cognito no devolvió un Access Token."
+      );
+    }
+
+    const perfilCargado =
+      await cargarPerfil(accessToken);
+
+    if (!perfilCargado) {
+      /*
+       * Si existe en Cognito pero no existe
+       * en BancoCloud, cerramos también la
+       * sesión de Cognito.
+       */
+      await signOut();
+
+      throw new Error(
+        "El usuario está autenticado en Cognito, pero no está registrado en BancoCloud."
+      );
+    }
+  }
+
+  async function registrar({
+    nombre,
+    apellido,
+    email,
+    password,
+  }: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    password: string;
+  }) {
+    const result = await signUp({
+      username: email,
+      password,
+
+      options: {
+        userAttributes: {
+          email,
+        },
+      },
+    });
+
+    if (result.isSignUpComplete) {
+      await finalizarRegistro(
+        email,
+        nombre,
+        apellido,
+        password
+      );
+    }
+  }
+
+  async function confirmarRegistro(
+    email: string,
+    codigo: string,
+    nombre: string,
+    apellido: string,
+    password: string
+  ) {
+    await confirmSignUp({
+      username: email,
+      confirmationCode: codigo,
+    });
+
+    await finalizarRegistro(
+      email,
+      nombre,
+      apellido,
+      password
+    );
+  }
+
+  async function finalizarRegistro(
+    email: string,
+    nombre: string,
+    apellido: string,
+    password: string
+  ) {
+    const result = await signIn({
+      username: email,
+      password,
+    });
+
+    if (!result.isSignedIn) {
+      throw new Error(
+        "No se pudo iniciar sesión después de confirmar la cuenta."
+      );
+    }
+
+    const accessToken =
+      await obtenerAccessToken();
+
+    if (!accessToken) {
+      throw new Error(
+        "Cognito no devolvió un Access Token."
+      );
+    }
+
+    const data =
+      await registrarEnBancoCloud(
+        accessToken,
+        nombre,
+        apellido,
+        email
+      );
+
+    setUsuario({
+      id: data.id,
+      nombre:
+        data.nombre || nombre,
+      apellido:
+        data.apellido || apellido,
+      correo: data.email,
+      email: data.email,
+      rol:
+        data.rol || "CLIENTE",
+    });
+
+    setToken(accessToken);
+  }
+
+  async function logout() {
+    try {
+      await signOut();
+    } finally {
+      setUsuario(null);
+      setToken(null);
+    }
+  }
+
+  async function restaurarSesion() {
+    try {
+      await getCurrentUser();
+
+      const accessToken =
+        await obtenerAccessToken();
+
+      if (!accessToken) {
+        setUsuario(null);
+        setToken(null);
+        return;
+      }
+
+      const perfilCargado =
+        await cargarPerfil(
+          accessToken
+        );
+
+      if (!perfilCargado) {
+        await signOut();
+      }
+
+    } catch {
+      setUsuario(null);
+      setToken(null);
+    }
+  }
+
+  useEffect(() => {
+    restaurarSesion();
+  }, []);
 
   const esAdmin = () => {
-    if (!usuario) return false;
-    const rol = usuario.rol || "";
-    return rol.includes("ADMIN");
+    return (
+      usuario?.rol?.includes(
+        "ADMIN"
+      ) ?? false
+    );
   };
 
   return (
-    <AuthContext.Provider value={{ usuario, token, login, logout, registrar, esAdmin }}>
+    <AuthContext.Provider
+      value={{
+        usuario,
+        token,
+        login,
+        registrar,
+        confirmarRegistro,
+        logout,
+        esAdmin,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context =
+    useContext(AuthContext);
+
   if (!context) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
+    throw new Error(
+      "useAuth debe usarse dentro de AuthProvider"
+    );
   }
+
   return context;
 }
