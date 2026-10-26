@@ -7,8 +7,9 @@ WORKDIR /app
 # Declare build-time arguments
 # These come from docker-compose.yml build.args
 ARG VITE_API_URL=http://localhost:8090/api/v1
-ARG VITE_COGNITO_USER_POOL_ID=us-east-1_3rNV181z7
-ARG VITE_COGNITO_USER_POOL_CLIENT_ID=2nog8midip8tq00b34c3o263vv
+# Cognito IDs have no default: they must come from .env
+ARG VITE_COGNITO_USER_POOL_ID
+ARG VITE_COGNITO_USER_POOL_CLIENT_ID
 ARG VITE_AWS_REGION=us-east-1
 
 # Convert ARG to ENV so they're available during npm run build

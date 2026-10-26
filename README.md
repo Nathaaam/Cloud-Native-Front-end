@@ -1,55 +1,45 @@
-# Cloud-Native Frontend
+# Banco Cloud — Frontend
 
-Frontend application built with React + TypeScript + Vite for the Cloud-Native Banking application.
+SPA de Banco Cloud, una aplicación de fondos mutuos. Construida con React 19, TypeScript y Vite; la autenticación usa AWS Cognito mediante AWS Amplify.
 
-## Features
+Backend: [Cloud-Native-Backend](https://github.com/itzAragorn/Cloud-Native-Backend)
 
-- React with TypeScript for type safety
-- Vite for fast development and optimized builds
-- AWS integration support
-- Authentication context management
-- Multi-page application with Dashboard, Investments, and Admin sections
+## Pantallas
 
-## Getting Started
+- **Ingreso y registro**: inicio de sesión con email, registro y confirmación por código (Cognito).
+- **Dashboard**: resumen de inversiones y rendimiento.
+- **Fondos y nueva inversión**: fondos activos e inversión en un fondo.
+- **Administración** (rol `ADMIN`): fondos, valor cuota y autorización, bloqueo o desbloqueo de usuarios.
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
+## Autenticación
 
-### Installation
+1. El usuario se registra o inicia sesión en Cognito (solo se envía `email`; nombre y apellido se guardan en el backend).
+2. La app obtiene el **Access Token** y lo envía al BFF en `Authorization: Bearer <token>`.
+3. Al registrarse se crea el perfil local en `POST /usuarios/registro`; en cada ingreso se carga con `GET /usuarios/me`.
+4. El rol y el estado del perfil local determinan qué puede hacer el usuario; el backend aplica la autorización.
+
+El App Client de Cognito debe ser público (sin client secret), con el flujo `ALLOW_USER_SRP_AUTH` y `email` como único atributo obligatorio.
+
+## Configuración
+
+Copia `.env.example` a `.env.local` y completa los valores:
+
+| Variable | Uso |
+|---|---|
+| `VITE_API_URL` | URL del BFF, por ejemplo `http://localhost:8090/api/v1` |
+| `VITE_COGNITO_USER_POOL_ID` | User Pool ID de Cognito |
+| `VITE_COGNITO_USER_POOL_CLIENT_ID` | App Client ID de Cognito |
+| `VITE_AWS_REGION` | Región del User Pool |
+
+Las variables `VITE_*` se incorporan al bundle durante el build; no pongas secretos en ellas.
+
+## Ejecución
 
 ```bash
-npm install
+npm ci
+npm run dev       # http://localhost:5173
+npm run build     # bundle en dist/
+npm run lint
 ```
 
-### Development Server
-
-```bash
-npm run dev
-```
-
-### Build
-
-```bash
-npm run build
-```
-
-### Preview
-
-```bash
-npm run preview
-```
-
-## Project Structure
-
-- `src/pages/` - Page components (Dashboard, Fondos, Admin, etc.)
-- `src/services/` - API and storage services
-- `src/context/` - React context for authentication
-- `src/assets/` - Static assets
-
-## Technologies
-
-- React + TypeScript
-- Vite
-- AWS Amplify
-- CSS Modules
+En Docker, el `Dockerfile` construye el bundle con Node 20 y lo sirve con Nginx en el puerto 80. El `docker-compose.yml` del backend levanta el frontend junto con el resto del stack y le pasa las variables `VITE_*` desde su `.env`.
