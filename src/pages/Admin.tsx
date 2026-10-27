@@ -10,10 +10,15 @@ import {
   obtenerMisInversiones,
 } from "../services/apiService";
 import { useAuth } from "../context/AuthContext";
+import MensajeriaAdmin from "./MensajeriaAdmin";
 import "./Css/Admin.css";
 
 function Admin() {
   const { usuario, token, esAdmin } = useAuth();
+
+  const [pestana, setPestana] = useState<
+    "general" | "mensajeria"
+  >("general");
 
   const [fondos, setFondos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -259,6 +264,28 @@ function Admin() {
         Bienvenido {usuario?.nombre}
       </p>
 
+      <nav className="admin-tabs">
+        <button
+          className={pestana === "general" ? "active" : ""}
+          onClick={() => setPestana("general")}
+        >
+          General
+        </button>
+
+        <button
+          className={pestana === "mensajeria" ? "active" : ""}
+          onClick={() => setPestana("mensajeria")}
+        >
+          Mensajería
+        </button>
+      </nav>
+
+      {pestana === "mensajeria" && token && (
+        <MensajeriaAdmin token={token} />
+      )}
+
+      {pestana === "general" && (
+      <>
       {error && (
         <div className="alert-error">
           {error}
@@ -569,6 +596,8 @@ function Admin() {
           </table>
         )}
       </section>
+      </>
+      )}
     </main>
   );
 }

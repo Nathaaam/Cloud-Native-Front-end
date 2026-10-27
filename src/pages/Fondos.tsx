@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   obtenerMisInversiones,
   obtenerRendimiento,
+  obtenerMisComprobantes,
 } from "../services/apiService";
 import { useAuth } from "../context/AuthContext";
 import "./Css/Fondos.css";
@@ -11,6 +12,10 @@ function Fondos({ irAInvertir }: any) {
 
   const [inversiones, setInversiones] = useState<any[]>([]);
   const [rendimiento, setRendimiento] = useState<any>(null);
+  // inversionId -> número de comprobante (BC-2026-000123)
+  const [comprobantes, setComprobantes] = useState<
+    Record<number, string>
+  >({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -51,6 +56,38 @@ function Fondos({ irAInvertir }: any) {
       );
     } finally {
       setCargando(false);
+    }
+
+    cargarComprobantes();
+  }
+
+  /**
+   * Los comprobantes se generan de forma asíncrona (RabbitMQ), así que
+   * pueden no existir todavía. Un error aquí no impide ver el portafolio.
+   */
+  async function cargarComprobantes() {
+    if (!usuario?.id || !token) return;
+
+    try {
+      const data = await obtenerMisComprobantes(
+        usuario.id,
+        token
+      );
+
+      const porInversion: Record<number, string> = {};
+
+      if (Array.isArray(data)) {
+        data.forEach((c: any) => {
+          porInversion[c.inversionId] = c.numero;
+        });
+      }
+
+      setComprobantes(porInversion);
+    } catch (err) {
+      console.warn(
+        "No se pudieron cargar los comprobantes",
+        err
+      );
     }
   }
 
@@ -240,6 +277,15 @@ function Fondos({ irAInvertir }: any) {
                         {Number(
                           inv.valorCuotaCompra || 0
                         ).toFixed(2)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Comprobante</span>
+
+                      <strong>
+                        {comprobantes[inv.id] ||
+                          "En proceso"}
                       </strong>
                     </div>
                   </div>

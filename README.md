@@ -8,8 +8,11 @@ Backend: [Cloud-Native-Backend](https://github.com/itzAragorn/Cloud-Native-Backe
 
 - **Ingreso y registro**: inicio de sesión con email, registro y confirmación por código (Cognito).
 - **Dashboard**: resumen de inversiones y rendimiento.
-- **Fondos y nueva inversión**: fondos activos e inversión en un fondo.
-- **Administración** (rol `ADMIN`): fondos, valor cuota y autorización, bloqueo o desbloqueo de usuarios.
+- **Mi Portafolio**: inversiones con su número de comprobante (`BC-<año>-<correlativo>`). El comprobante se genera de forma asíncrona, así que una inversión recién creada puede mostrar "En proceso" unos segundos.
+- **Nueva inversión**: fondos activos e inversión en un fondo.
+- **Administración** (rol `ADMIN`):
+  - *General*: fondos, valor cuota y autorización, bloqueo o desbloqueo de usuarios.
+  - *Mensajería*: estado de las colas de RabbitMQ y sus DLQ, y creación o eliminación de colas, exchanges y bindings.
 
 ## Autenticación
 

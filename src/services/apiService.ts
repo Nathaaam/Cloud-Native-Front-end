@@ -16,6 +16,14 @@ async function extraerMensajeError(
   try {
     const body = await response.json();
 
+    // rabbit-admin-service: [{ campo, error }, ...]
+    if (Array.isArray(body?.errores) && body.errores.length > 0) {
+      return body.errores
+        .map((e: any) => `${e.campo}: ${e.error}`)
+        .join(" · ");
+    }
+
+    // Demás servicios: { campo: mensaje }
     if (body?.errores && typeof body.errores === "object") {
       const primerError = Object.values(body.errores)[0];
 
@@ -369,4 +377,155 @@ export async function desbloquearUsuario(
   }
 
   return await response.json();
+}
+// ==================== COMPROBANTES ====================
+
+export async function obtenerMisComprobantes(
+  usuarioId: number,
+  token: string
+) {
+  const response = await fetch(
+    `${API_URL}/comprobantes?usuarioId=${usuarioId}`,
+    {
+      headers: getAuthHeaders(token),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await extraerMensajeError(
+        response,
+        "Error obteniendo comprobantes"
+      )
+    );
+  }
+
+  return await response.json();
+}
+
+// ==================== MENSAJERÍA (RabbitMQ, solo ADMIN) ====================
+
+export type TipoExchange = "DIRECT" | "TOPIC" | "FANOUT" | "HEADERS";
+
+export interface CrearColaRequest {
+  name: string;
+  durable: boolean;
+  deadLetterExchange?: string;
+  deadLetterRoutingKey?: string;
+  ttlMs?: number;
+}
+
+export interface CrearExchangeRequest {
+  name: string;
+  type: TipoExchange;
+  durable: boolean;
+}
+
+export interface BindingRequest {
+  queue: string;
+  exchange: string;
+  routingKey: string;
+}
+
+async function peticionRabbitAdmin(
+  method: "GET" | "POST" | "DELETE",
+  ruta: string,
+  token: string,
+  fallback: string,
+  body?: unknown
+) {
+  const response = await fetch(
+    `${API_URL}/admin/rabbit${ruta}`,
+    {
+      method,
+      headers: getAuthHeaders(token),
+      ...(body !== undefined && {
+        body: JSON.stringify(body),
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await extraerMensajeError(response, fallback)
+    );
+  }
+
+  // 204 No Content en las eliminaciones
+  return response.status === 204
+    ? null
+    : await response.json();
+}
+
+export function obtenerCola(nombre: string, token: string) {
+  return peticionRabbitAdmin(
+    "GET",
+    `/queues/${encodeURIComponent(nombre)}`,
+    token,
+    "Error consultando la cola"
+  );
+}
+
+export function crearCola(data: CrearColaRequest, token: string) {
+  return peticionRabbitAdmin(
+    "POST",
+    "/queues",
+    token,
+    "Error creando la cola",
+    data
+  );
+}
+
+export function eliminarCola(nombre: string, token: string) {
+  return peticionRabbitAdmin(
+    "DELETE",
+    `/queues/${encodeURIComponent(nombre)}`,
+    token,
+    "Error eliminando la cola"
+  );
+}
+
+export function crearExchange(
+  data: CrearExchangeRequest,
+  token: string
+) {
+  return peticionRabbitAdmin(
+    "POST",
+    "/exchanges",
+    token,
+    "Error creando el exchange",
+    data
+  );
+}
+
+export function eliminarExchange(nombre: string, token: string) {
+  return peticionRabbitAdmin(
+    "DELETE",
+    `/exchanges/${encodeURIComponent(nombre)}`,
+    token,
+    "Error eliminando el exchange"
+  );
+}
+
+export function crearBinding(data: BindingRequest, token: string) {
+  return peticionRabbitAdmin(
+    "POST",
+    "/bindings",
+    token,
+    "Error creando el binding",
+    data
+  );
+}
+
+export function eliminarBinding(
+  data: BindingRequest,
+  token: string
+) {
+  return peticionRabbitAdmin(
+    "DELETE",
+    "/bindings",
+    token,
+    "Error eliminando el binding",
+    data
+  );
 }
