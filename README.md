@@ -46,3 +46,24 @@ npm run lint
 ```
 
 En Docker, el `Dockerfile` construye el bundle con Node 20 y lo sirve con Nginx en el puerto 80. El `docker-compose.yml` del backend levanta el frontend junto con el resto del stack y le pasa las variables `VITE_*` desde su `.env`.
+
+## Despliegue en AWS (S3 + CloudFront)
+
+El bucket queda privado y CloudFront lo lee con Origin Access Control. El default root object es `index.html`.
+
+```bash
+cp .env.production.example .env.production.local   # URL de API Gateway, Cognito, bucket y distribución
+./scripts/deploy-s3.sh --solo-build                 # opcional: build y verificación sin subir nada
+./scripts/deploy-s3.sh                              # build, subida a S3 e invalidación de CloudFront
+```
+
+El script hace estas comprobaciones:
+
+- Antes del build, exige que `VITE_API_URL` sea `https` y termine en `/api/v1`.
+- Después del build, revisa que el bundle lleve esa URL y el User Pool, y que no quede ninguna referencia a `localhost`.
+
+En la subida, los assets llevan caché de un año porque tienen hash en el nombre. `index.html` se revalida siempre, así que cada despliegue se ve de inmediato.
+
+Requiere credenciales de AWS vigentes. En el Learner Lab se copian desde *AWS Details* a `~/.aws/credentials`.
+
+La URL de CloudFront tiene que estar en `APP_CORS_ALLOWED_ORIGINS` del backend.
