@@ -2,7 +2,7 @@
 
 SPA de Banco Cloud, una aplicación de fondos mutuos. Construida con React 19, TypeScript y Vite; la autenticación usa AWS Cognito mediante AWS Amplify.
 
-Backend: [Cloud-Native-Backend](https://github.com/itzAragorn/Cloud-Native-Backend)
+Backend: [Cloud-Native-Backend](https://github.com/itzAragorn/Cloud-Native-Backend) · Aplicación desplegada: https://3cwdl02ue4.execute-api.us-east-1.amazonaws.com
 
 ## Pantallas
 
@@ -47,23 +47,39 @@ npm run lint
 
 En Docker, el `Dockerfile` construye el bundle con Node 20 y lo sirve con Nginx en el puerto 80. El `docker-compose.yml` del backend levanta el frontend junto con el resto del stack y le pasa las variables `VITE_*` desde su `.env`.
 
-## Despliegue en AWS (S3 + CloudFront)
+## Despliegue en AWS
 
-El bucket queda privado y CloudFront lo lee con Origin Access Control. El default root object es `index.html`.
+Aplicación desplegada: **https://3cwdl02ue4.execute-api.us-east-1.amazonaws.com**
+
+El build se publica en un bucket de S3 y lo sirve **API Gateway**, la misma HTTP API que expone el backend. Así el frontend y la API comparten URL y HTTPS. El Learner Lab no permite usar CloudFront.
+
+| Ruta en API Gateway | Integración |
+|---|---|
+| `GET /` | HTTP → `https://<bucket>.s3.us-east-1.amazonaws.com/index.html` |
+| `GET /favicon.svg` | HTTP → `https://<bucket>.s3.us-east-1.amazonaws.com/favicon.svg` |
+| `GET /assets/{proxy+}` | HTTP → `https://<bucket>.s3.us-east-1.amazonaws.com/assets/{proxy}` |
+| `ANY /{proxy+}` | VPC Link → ALB → BFF (`/api/v1/...`) |
+
+La política del bucket permite lectura pública **solo** de `index.html`, `favicon.svg` y `assets/*`. Ningún otro objeto del bucket queda accesible. Si el build agrega un archivo nuevo en la raíz, hay que sumarlo a la política y crear su ruta.
+
+### Publicar una versión nueva
 
 ```bash
-cp .env.production.example .env.production.local   # URL de API Gateway, Cognito, bucket y distribución
-./scripts/deploy-s3.sh --solo-build                 # opcional: build y verificación sin subir nada
-./scripts/deploy-s3.sh                              # build, subida a S3 e invalidación de CloudFront
+cp .env.production.example .env.production.local   # URL de API Gateway, Cognito y bucket
+./scripts/deploy-s3.sh                              # build, verificación y subida (requiere AWS CLI)
 ```
+
+Sin credenciales de AWS CLI, `./scripts/deploy-s3.sh --solo-build` deja el build verificado en `dist/`. Después se sube desde la consola de S3:
+
+- `index.html` y `favicon.svg`, a la raíz del bucket;
+- la carpeta `assets`.
 
 El script hace estas comprobaciones:
 
 - Antes del build, exige que `VITE_API_URL` sea `https` y termine en `/api/v1`.
 - Después del build, revisa que el bundle lleve esa URL y el User Pool, y que no quede ninguna referencia a `localhost`.
+- En la subida, borra versiones viejas solo dentro de `assets/`. Nunca toca otros archivos del bucket.
 
-En la subida, los assets llevan caché de un año porque tienen hash en el nombre. `index.html` se revalida siempre, así que cada despliegue se ve de inmediato.
+En la subida, los assets llevan caché de un año porque tienen hash en el nombre, e `index.html` se revalida siempre.
 
-Requiere credenciales de AWS vigentes. En el Learner Lab se copian desde *AWS Details* a `~/.aws/credentials`.
-
-La URL de CloudFront tiene que estar en `APP_CORS_ALLOWED_ORIGINS` del backend.
+La URL pública tiene que estar en `APP_CORS_ALLOWED_ORIGINS` del backend.

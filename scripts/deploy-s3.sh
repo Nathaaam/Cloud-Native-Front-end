@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# Banco Cloud - publica el frontend en S3 detrás de CloudFront.
+# Banco Cloud - publica el frontend en S3.
+#
+# El bucket se sirve por API Gateway (rutas GET /, /favicon.svg y /assets/{proxy+})
+# o, en cuentas que lo permitan, por CloudFront.
 #
 # Configuración: .env.production.local (ver .env.production.example). Vite lo
-# carga en el build y el script toma de ahí S3_BUCKET y CLOUDFRONT_DISTRIBUTION_ID.
+# carga en el build y el script toma de ahí S3_BUCKET y CLOUDFRONT_DISTRIBUTION_ID (opcional).
 # Requiere credenciales de AWS vigentes (aws configure o variables AWS_*).
 #
 # Uso:
-#   ./scripts/deploy-s3.sh               build + subida + invalidación de CloudFront
-#   ./scripts/deploy-s3.sh --solo-build  build y verificación, sin subir nada
+#   ./scripts/deploy-s3.sh               build + subida (+ invalidación si hay CloudFront)
+#   ./scripts/deploy-s3.sh --solo-build  build y verificación, sin subir nada (para subir
+#                                        dist/ a mano desde la consola de S3)
 
 set -euo pipefail
 
@@ -61,9 +65,15 @@ fi
 
 # ---------------------------------------------------------------- subida
 # Los assets llevan hash en el nombre: caché larga. index.html siempre se revalida.
+# --delete solo dentro de assets/ (borra versiones anteriores): el bucket puede tener
+# otros archivos que no son del frontend.
 info "Subiendo a s3://$S3_BUCKET"
-aws s3 sync dist/ "s3://$S3_BUCKET/" --delete --exclude index.html \
+aws s3 sync dist/assets/ "s3://$S3_BUCKET/assets/" --delete \
   --cache-control "public,max-age=31536000,immutable"
+for archivo in dist/*; do
+  [[ -f $archivo && $(basename "$archivo") != index.html ]] || continue
+  aws s3 cp "$archivo" "s3://$S3_BUCKET/$(basename "$archivo")" --cache-control "public,max-age=86400"
+done
 aws s3 cp dist/index.html "s3://$S3_BUCKET/index.html" \
   --cache-control "no-cache" --content-type "text/html; charset=utf-8"
 ok "Archivos subidos"
@@ -76,5 +86,5 @@ if [[ -n ${CLOUDFRONT_DISTRIBUTION_ID:-} ]]; then
     --query 'Distribution.DomainName' --output text)
   ok "Frontend publicado en https://$dominio"
 else
-  ok "Sin CLOUDFRONT_DISTRIBUTION_ID: no se invalidó la caché"
+  ok "Frontend publicado. Sin CloudFront: lo sirve API Gateway desde el bucket"
 fi
